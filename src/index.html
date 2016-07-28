@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>acorns</title>
+
+	<!-- meta -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+	<!-- css -->
+	<link rel="stylesheet" href="lib/reset-css/reset.css">
+	<link rel="stylesheet" href="lib/font-awesome/css/font-awesome.css">
+	<link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.css">
+	<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+	<div id="app">
+		<router-view></router-view>
+	</div>
+
+
+	<!-- header -->
+
+	<template id="header_template">
+		<app-alerts></app-alerts>
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main_nav_collapse" aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#"><img src="img/logo_with_text_blue.png"></a>
+				</div>
+				<div class="collapse navbar-collapse" id="main_nav_collapse">
+					<ul class="nav navbar-nav navbar-right">
+						<li v-bind:class="{ 'active': $route.group === 'places' }"><a v-link="{ path: '/places' }"><i class="fa fa-globe" aria-hidden="true"></i> Places</a></li>
+						<li v-bind:class="{ 'active': $route.group === 'things' }"><a v-link="{ path: '/things' }"><i class="fa fa-briefcase" aria-hidden="true"></i> Things</a></li>
+						<li class="dropdown" v-bind:class="{ 'active': $route.group === 'settings' }">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+								<i class="fa fa-cog" aria-hidden="true"></i> Settings
+								<span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu">
+								<li v-bind:class="{ 'active': $route.name === 'profile' }"><a v-link="{ path: '/things' }"><i class="fa fa-user" aria-hidden="true"></i> Profile</a></li>
+								<li v-bind:class="{ 'active': $route.name === 'preferences' }"><a v-link="{ path: '/things' }"><i class="fa fa-sliders" aria-hidden="true"></i> Preferences</a></li>
+								<li v-bind:class="{ 'active': $route.name === 'users' }"><a v-link="{ path: '/things' }"><i class="fa fa-users" aria-hidden="true"></i> Users</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a v-link="{ path: '/logout' }"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a></li>
+							</ul>
+						</li>
+					</ul>
+				</div><!-- /.navbar-collapse -->
+			</div><!-- /.container-fluid -->
+		</nav>
+	</template>
+
+
+	<!-- places -->
+
+	<template id="places_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<ol class="breadcrumb">
+				<li class="active">Places</li>
+			</ol>
+			<div class="section">
+				<h2>
+					<i class="fa fa-globe" aria-hidden="true"></i> Places &nbsp;
+					<button type="button" class="btn btn-default btn-xs" @click.prevent="open_add_place">
+						<i class="fa fa-plus" aria-hidden="true"></i>
+						Create New
+					</button>
+				</h2>
+
+				<div class="list-group">
+					<li class="list-group-item">
+						<div class="input-group">
+							<div class="input-group-addon"><i class="fa fa-filter" aria-hidden="true"></i></div>
+							<input type="search" class="form-control" placeholder="Filter" v-model="ui.places_filter">
+						</div>
+					</li>
+					<a v-for="place in matching_places | orderBy 'name' | limitBy ui.all_places_view_length"
+						class="list-group-item"
+						v-link="{ path: '/places/' + place.id }">
+						{{place.name}}
+						<span class="badge">{{place.things_count}}</span>
+					</a>
+					<a v-if="matching_places.length > ui.all_places_view_length"
+						class="list-group-item text-center"
+						href="" @click.prevent="ui.all_places_view_length *= 2">
+						<i class="fa fa-chevron-circle-down" aria-hidden="true" aria-label="View More"></i>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<app-add-place></app-add-place>
+	</template>
+
+	<template id="place_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<ol class="breadcrumb">
+				<li><a v-link="{ path: '/places' }">Places</a></li>
+				<li class="active">{{place.name}}</li>
+			</ol>
+			<div class="section">
+				<h2>
+					<i class="fa fa-globe" aria-hidden="true"></i> {{place.name}} &nbsp;
+					<button type="button" class="btn btn-default btn-xs" @click.prevent="open_edit_place">
+						<i class="fa fa-pencil" aria-hidden="true"></i>
+						Edit
+					</button>
+				</h2>
+
+				<div class="details">
+					<div v-if="place.address_line_1 || place.address_line_2 || place.address_city || place.address_state || place.address_zip">
+						<h3><i class="fa fa-map-marker" aria-hidden="true"></i> Address</h3>
+						<p>
+							<a target="_blank" href="https://www.google.com/maps/search/{{place.address_line_1 || ''}}+{{place.address_line_2 || ''}}+{{place.address_city || ''}}+{{place.address_state || ''}}+{{place.address_zip || ''}}/">
+								<span v-if="place.address_line_1">{{place.address_line_1}}<br></span>
+								<span v-if="place.address_line_2">{{place.address_line_2}}<br></span>
+								<span v-if="place.address_city">{{place.address_city}}</span>
+								<span v-if="place.address_state">{{place.address_state}}</span>
+								<span v-if="place.address_zip">{{place.address_zip}}</span>
+							</a>
+						</p>
+					</div>
+
+					<div v-if="place.email">
+						<h3><i class="fa fa-envelope" aria-hidden="true"></i> Email</h3>
+						<p><a href="mailto:{{place.email}}">{{place.email}}</a></p>
+					</div>
+
+					<div v-if="place.phone">
+						<h3><i class="fa fa-phone" aria-hidden="true"></i> Phone</h3>
+						<p><a href="tel:+{{place.phone}}">{{place.phone | phone}}</a></p>
+					</div>
+
+					<div v-if="place.notes">
+						<h3>Notes</h3>
+						<p>{{place.notes}}</p>
+					</div>
+				</div>
+
+				<div class="subsection">
+					<h3>
+						<i class="fa fa-briefcase" aria-hidden="true"></i> Things ({{place.things_count}}) &nbsp;
+						<button type="button" class="btn btn-default btn-xs" @click.prevent="open_move_things_to_place">
+							<i class="fa fa-plus" aria-hidden="true"></i>
+							Add
+						</button>
+					</h3>
+					<div class="list-group" v-if="place.things_count">
+						<li class="list-group-item">
+							<div class="input-group">
+								<div class="input-group-addon"><i class="fa fa-filter" aria-hidden="true"></i></div>
+								<input type="search" class="form-control" placeholder="Filter" v-model="ui.things_filter">
+							</div>
+						</li>
+						<a v-for="thing in matching_things | orderBy 'brand' | limitBy ui.things_view_length"
+							class="list-group-item"
+							v-link="{ path: '/places/' + place.id + '/things/' + thing.id }">
+							{{thing.brand}} {{thing.type}}
+							<span class="badge">{{thing.tracking}}</span>
+						</a>
+						<a v-if="matching_things.length > ui.things_view_length"
+							class="list-group-item text-center"
+							href="" @click.prevent="ui.things_view_length *= 2">
+							<i class="fa fa-chevron-circle-down" aria-hidden="true" aria-label="View More"></i>
+						</a>
+					</div>
+					<div class="list-group" v-else>
+						<li class="list-group-item">There's nothing here</li>
+					</div>
+				</div>
+
+				<div class="subsection">
+					<h3>
+						<i class="fa fa-history" aria-hidden="true"></i> History &nbsp;
+						<button type="button" class="btn btn-default btn-xs" v-if="!ui.view_history" @click.prevent="ui.view_history = true">
+							<i class="fa fa-chevron-circle-down" aria-hidden="true"></i>
+							Show
+						</button>
+						<button type="button" class="btn btn-default btn-xs" v-if="ui.view_history" @click.prevent="ui.view_history = false">
+							<i class="fa fa-chevron-circle-up" aria-hidden="true"></i>
+							Hide
+						</button>
+					</h3>
+					<div v-if="ui.view_history">
+						<div class="list-group" v-if="place.history.length">
+							<a v-for="event in place.history | orderBy 'time' -1 | limitBy ui.history_view_length"
+								v-link="{ path: event.thing ? '/things/' + event.thing.id : '' }"
+								class="list-group-item {{history_event_color_class(event)}}">
+								<span class="badge">{{event.time | datetime}}</span>
+								<h4 class="list-group-item-heading">{{{history_event_heading(event)}}}</h4>
+								<p class="list-group-item-text">
+									{{{history_event_body(event)}}}
+								</p>
+							</a>
+							<a v-if="place.history.length > ui.history_view_length"
+								class="list-group-item text-center"
+								href="" @click.prevent="ui.history_view_length *= 2">
+								<i class="fa fa-chevron-circle-down" aria-hidden="true" aria-label="View More"></i>
+							</a>
+						</div>
+						<div class="list-group" v-else>
+							<li class="list-group-item">No history found</li>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<app-edit-place></app-edit-place>
+		<app-move-things-to-place></app-move-things-to-place>
+	</template>
+
+	<template id="add_place_template">
+		<div class="modal fade" id="add_place_modal" tabindex="-1" role="dialog" aria-labelledby="add_place_modal_label">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<form @submit.prevent="create_place">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							<h4 class="modal-title" id="add_place_modal_label"><i class="fa fa-globe" aria-hidden="true"></i> Add Place</h4>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<label for="name_input">Name*</label>
+								<input type="text" class="form-control" id="name_input" placeholder="Name" required v-model="ui.place.name" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_line_1_input">Address Line 1</label>
+								<input type="text" class="form-control" id="address_line_1_input" placeholder="Address Line 1" v-model="ui.place.address_line_1" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_line_2_input">Address Line 2</label>
+								<input type="text" class="form-control" id="address_line_2_input" placeholder="Address Line 2" v-model="ui.place.address_line_2" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_city_input">Address City</label>
+								<input type="text" class="form-control" id="address_city_input" placeholder="Address City" v-model="ui.place.address_city" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_state_input">Address State</label>
+								<input type="text" class="form-control" id="address_state_input" placeholder="Address State" v-model="ui.place.address_state" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_zip_input">Address Zip</label>
+								<input type="text" class="form-control" id="address_zip_input" placeholder="Address Zip" v-model="ui.place.address_zip" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="email_input">Email</label>
+								<input type="text" class="form-control" id="email_input" placeholder="Email" v-model="ui.place.email" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="phone_input">Phone</label>
+								<input type="text" class="form-control" id="phone_input" placeholder="Phone" v-model="ui.place.phone" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="notes_input">Notes</label>
+								<textarea class="form-control" rows="3" id="notes_input" placeholder="Notes" v-model="ui.place.notes" autocomplete="off"></textarea>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close">Cancel</button>
+							<button type="submit" class="btn btn-success">Create</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</template>
+
+	<template id="edit_place_template">
+		<div class="modal fade" id="edit_place_modal" tabindex="-1" role="dialog" aria-labelledby="edit_place_modal_label">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<form @submit.prevent="edit_place">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							<h4 class="modal-title" id="edit_place_modal_label"><i class="fa fa-globe" aria-hidden="true"></i> Edit Place</h4>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<label for="name_input">Name*</label>
+								<input type="text" class="form-control" id="name_input" placeholder="Name" required v-model="ui.place.name" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_line_1_input">Address Line 1</label>
+								<input type="text" class="form-control" id="address_line_1_input" placeholder="Address Line 1" v-model="ui.place.address_line_1" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_line_2_input">Address Line 2</label>
+								<input type="text" class="form-control" id="address_line_2_input" placeholder="Address Line 2" v-model="ui.place.address_line_2" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_city_input">Address City</label>
+								<input type="text" class="form-control" id="address_city_input" placeholder="Address City" v-model="ui.place.address_city" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_state_input">Address State</label>
+								<input type="text" class="form-control" id="address_state_input" placeholder="Address State" v-model="ui.place.address_state" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="address_zip_input">Address Zip</label>
+								<input type="text" class="form-control" id="address_zip_input" placeholder="Address Zip" v-model="ui.place.address_zip" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="email_input">Email</label>
+								<input type="text" class="form-control" id="email_input" placeholder="Email" v-model="ui.place.email" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="phone_input">Phone</label>
+								<input type="text" class="form-control" id="phone_input" placeholder="Phone" v-model="ui.place.phone" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="notes_input">Notes</label>
+								<textarea class="form-control" rows="3" id="notes_input" placeholder="Notes" v-model="ui.place.notes" autocomplete="off"></textarea>
+							</div>
+							<button class="btn btn-danger btn-block" type="button" data-toggle="collapse" data-target="#delete_place_confirm" aria-expanded="false" aria-controls="delete_place_confirm">Delete</button>
+							<div class="collapse" id="delete_place_confirm">
+								<div class="well text-center">
+									<p><strong>Are you sure you want to delete {{ui.place.name}}?</strong></p>
+									<p>
+										<button type="button" class="btn btn-success" data-toggle="collapse" data-target="#delete_place_confirm" aria-expanded="true" aria-controls="delete_place_confirm">No</button>
+										<button type="button" class="btn btn-danger" @click="delete_place">Yes, I'm sure</button>
+									</p>
+								</div>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close">Cancel</button>
+							<button type="submit" class="btn btn-success">Update</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</template>
+
+	<template id="move_things_to_place_template">
+		<div class="modal fade" id="move_things_to_place_modal" tabindex="-1" role="dialog" aria-labelledby="move_things_to_place_modal_label">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<form @submit.prevent="move_things_to_place">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							<h4 class="modal-title" id="move_things_to_place_modal_label"><i class="fa fa-briefcase" aria-hidden="true"></i> Add Things to {{ui.place.name}}</h4>
+						</div>
+						<div class="modal-body">
+							<label>Choose Things</label>
+							<div class="list-group" id="add_to_moving_things_list">
+								<li class="list-group-item">
+									<div class="input-group">
+										<div class="input-group-addon"><i class="fa fa-filter" aria-hidden="true"></i></div>
+										<input type="search" class="form-control" placeholder="Search" v-model="ui.add_to_moving_things_filter" v-on:keydown.enter.prevent="attempt_to_add_to_moving_things">
+									</div>
+								</li>
+								<a v-for="thing in add_list_things | orderBy 'brand' | limitBy ui.moving_things_view_length"
+									class="list-group-item add_to_moving_things_item"
+									@click.prevent="add_to_moving_things(thing)"
+									href="#">
+									<i class="fa fa-plus" aria-hidden="true"></i> &nbsp; {{thing.brand}} {{thing.type}}
+									<span class="badge">{{thing.place.name}}</span>
+									<span class="badge">{{thing.tracking}}</span>
+								</a>
+								<a v-if="add_list_things.length > ui.moving_things_view_length"
+									class="list-group-item text-center"
+									href="" @click.prevent="ui.moving_things_view_length *= 2">
+									<i class="fa fa-chevron-circle-down" aria-hidden="true" aria-label="View More"></i>
+								</a>
+							</div>
+
+							<label>Moving {{ui.moving_things.length}} to {{ui.place.name}}</label>
+							<div class="list-group">
+								<a v-for="thing in remove_list_things | orderBy 'brand'"
+									class="list-group-item"
+									@click.prevent="remove_from_moving_things(thing)"
+									href="#">
+									<i class="fa fa-times" aria-hidden="true"></i> &nbsp; {{thing.brand}} {{thing.type}}
+									<span class="badge">{{thing.place.name}}</span>
+									<span class="badge">{{thing.tracking}}</span>
+								</a>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close">Cancel</button>
+							<button type="submit" class="btn btn-success">Add</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</template>
+
+
+	<!-- things -->
+
+	<template id="things_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<ol class="breadcrumb">
+				<li class="active">Things</li>
+			</ol>
+			<div class="section">
+				<h2>
+					<i class="fa fa-briefcase" aria-hidden="true"></i> Things &nbsp;
+					<button type="button" class="btn btn-default btn-xs" @click.prevent="open_add_thing">
+						<i class="fa fa-plus" aria-hidden="true"></i>
+						Create New
+					</button>
+				</h2>
+
+				<div class="list-group">
+					<li class="list-group-item">
+						<div class="input-group">
+							<div class="input-group-addon"><i class="fa fa-filter" aria-hidden="true"></i></div>
+							<input type="search" class="form-control" placeholder="Filter" v-model="ui.things_filter">
+						</div>
+					</li>
+					<a v-for="thing in matching_things | orderBy 'brand' | limitBy ui.all_things_view_length"
+						class="list-group-item"
+						v-link="{ path: '/things/' + thing.id }">
+						{{thing.brand}} {{thing.type}}
+						<span class="badge">{{thing.place.name}}</span>
+						<span class="badge">{{thing.tracking}}</span>
+					</a>
+					<a v-if="matching_things.length > ui.all_things_view_length"
+						class="list-group-item text-center"
+						href="" @click.prevent="ui.all_things_view_length *= 2">
+						<i class="fa fa-chevron-circle-down" aria-hidden="true" aria-label="View More"></i>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<app-things-datalists></app-things-datalists>
+		<app-add-thing></app-add-thing>
+	</template>
+
+	<template id="thing_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<ol class="breadcrumb" v-if="$route.group === 'things'">
+				<li><a v-link="{ path: '/things' }">Things</a></li>
+				<li class="active">{{thing.brand}} {{thing.type}}</li>
+			</ol>
+			<ol class="breadcrumb" v-if="$route.group === 'places'">
+				<li><a v-link="{ path: '/places' }">Places</a></li>
+				<li><a v-link="{ path: '/places/' + $route.params.place_id }">{{place.name}}</a></li>
+				<li class="active">{{thing.brand}} {{thing.type}}</li>
+			</ol>
+			<div class="section">
+				<h2>
+					<i class="fa fa-briefcase" aria-hidden="true"></i> {{thing.brand}} {{thing.type}} &nbsp;
+					<button type="button" class="btn btn-default btn-xs" @click.prevent="open_edit_thing">
+						<i class="fa fa-pencil" aria-hidden="true"></i>
+						Edit
+					</button>
+				</h2>
+
+				<div class="details">
+					<div v-if="thing.place">
+						<h3><i class="fa fa-globe" aria-hidden="true"></i> Place</h3>
+						<p><a v-link="{ path: '/places/' + thing.place.id }">{{thing.place.name}}</a></p>
+					</div>
+
+					<div v-if="thing.tracking">
+						<h3><i class="fa fa-barcode" aria-hidden="true"></i> Tracking ID</h3>
+						<p>{{thing.tracking}}</p>
+					</div>
+
+					<div v-if="thing.serial">
+						<h3><i class="fa fa-barcode" aria-hidden="true"></i> Serial ID</h3>
+						<p>{{thing.serial}}</p>
+					</div>
+
+					<div v-if="thing.model">
+						<h3><i class="fa fa-barcode" aria-hidden="true"></i> Model ID</h3>
+						<p>{{thing.model}}</p>
+					</div>
+				</div>
+
+				<div class="subsection">
+					<h3>
+						<i class="fa fa-history" aria-hidden="true"></i> History &nbsp;
+						<button type="button" class="btn btn-default btn-xs" v-if="!ui.view_history" @click.prevent="ui.view_history = true">
+							<i class="fa fa-chevron-circle-down" aria-hidden="true"></i>
+							Show
+						</button>
+						<button type="button" class="btn btn-default btn-xs" v-if="ui.view_history" @click.prevent="ui.view_history = false">
+							<i class="fa fa-chevron-circle-up" aria-hidden="true"></i>
+							Hide
+						</button>
+					</h3>
+					<div v-if="ui.view_history">
+						<div class="list-group" v-if="thing.history.length">
+							<a v-for="event in thing.history | orderBy 'time' -1 | limitBy ui.history_view_length"
+								class="list-group-item {{history_event_color_class(event)}}">
+								<span class="badge">{{event.time | datetime}}</span>
+								<h4 class="list-group-item-heading">{{{history_event_heading(event)}}}</h4>
+								<p class="list-group-item-text">
+									{{{history_event_body(event)}}}
+								</p>
+							</a>
+							<a v-if="thing.history.length > ui.history_view_length"
+								class="list-group-item text-center"
+								href="" @click.prevent="ui.history_view_length *= 2">
+								<i class="fa fa-chevron-circle-down" aria-hidden="true" aria-label="View More"></i>
+							</a>
+						</div>
+						<div class="list-group" v-else>
+							<li class="list-group-item">No history found</li>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<app-things-datalists></app-things-datalists>
+		<app-edit-thing></app-edit-thing>
+	</template>
+
+	<template id="things_datalists_template">
+		<datalist id="brands_datalist">
+			<option v-for="brand in brands" value="{{brand}}">
+		</datalist>
+		<datalist id="types_datalist">
+			<option v-for="type in types" value="{{type}}">
+		</datalist>
+	</template>
+
+	<template id="add_thing_template">
+		<div class="modal fade" id="add_thing_modal" tabindex="-1" role="dialog" aria-labelledby="add_thing_modal_label">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<form @submit.prevent="create_thing">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							<h4 class="modal-title" id="add_thing_modal_label"><i class="fa fa-briefcase" aria-hidden="true"></i> Add Thing</h4>
+						</div>
+						<div class="modal-body">
+								<div class="form-group">
+									<label for="brand_input">Brand*</label>
+									<input type="text" class="form-control" id="brand_input" placeholder="Brand" required v-model="ui.thing.brand" list="brands_datalist" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="type_input">Type*</label>
+									<input type="text" class="form-control" id="type_input" placeholder="Type" required v-model="ui.thing.type" list="types_datalist" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="tracking_input">Tracking ID*</label>
+									<input type="text" class="form-control" id="tracking_input" placeholder="Tracking ID" required v-model="ui.thing.tracking" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="serial_input">Serial ID*</label>
+									<input type="text" class="form-control" id="serial_input" placeholder="Serial ID" required v-model="ui.thing.serial" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="model_input">Model ID*</label>
+									<input type="text" class="form-control" id="model_input" placeholder="Model ID" required v-model="ui.thing.model" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="type_input">Place*</label>
+									<select class="form-control" id="place_input" required v-model="ui.moving_to_place_id" autocomplete="off">
+										<option value="">--</option>
+										<option v-for="place in places | orderBy 'name'" value="{{place.id}}">{{place.name}}</option>
+									</select>
+								</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close">Cancel</button>
+							<button type="submit" class="btn btn-success">Add</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</template>
+
+	<template id="edit_thing_template">
+		<div class="modal fade" id="edit_thing_modal" tabindex="-1" role="dialog" aria-labelledby="edit_thing_modal_label">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<form @submit.prevent="edit_thing">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							<h4 class="modal-title" id="edit_thing_modal_label"><i class="fa fa-briefcase" aria-hidden="true"></i> Edit Thing</h4>
+						</div>
+						<div class="modal-body">
+								<div class="form-group">
+									<label for="brand_input">Brand*</label>
+									<input type="text" class="form-control" id="brand_input" placeholder="Brand" required v-model="ui.thing.brand" list="brands_datalist" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="type_input">Type*</label>
+									<input type="text" class="form-control" id="type_input" placeholder="Type" required v-model="ui.thing.type" list="types_datalist" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="tracking_input">Tracking ID*</label>
+									<input type="text" class="form-control" id="tracking_input" placeholder="Tracking ID" required v-model="ui.thing.tracking" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="serial_input">Serial ID*</label>
+									<input type="text" class="form-control" id="serial_input" placeholder="Serial ID" required v-model="ui.thing.serial" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="model_input">Model ID*</label>
+									<input type="text" class="form-control" id="model_input" placeholder="Model ID" required v-model="ui.thing.model" autocomplete="off">
+								</div>
+								<div class="form-group">
+									<label for="type_input">Place*</label>
+									<select class="form-control" id="place_input" required v-model="ui.moving_to_place_id" autocomplete="off">
+										<option v-for="place in places | orderBy 'name'" value="{{place.id}}">{{place.name}}</option>
+									</select>
+								</div>
+								<button class="btn btn-danger btn-block" type="button" data-toggle="collapse" data-target="#delete_thing_confirm" aria-expanded="false" aria-controls="delete_thing_confirm">Delete</button>
+								<div class="collapse" id="delete_thing_confirm">
+									<div class="well text-center">
+										<p><strong>Are you sure you want to delete {{ui.thing.brand}} {{ui.thing.type}} {{ui.thing.tracking}}?</strong></p>
+										<p>
+											<button type="button" class="btn btn-success" data-toggle="collapse" data-target="#delete_thing_confirm" aria-expanded="true" aria-controls="delete_thing_confirm">No</button>
+											<button type="button" class="btn btn-danger" @click="delete_thing">Yes, I'm sure</button>
+										</p>
+									</div>
+								</div>
+
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close">Cancel</button>
+							<button type="submit" class="btn btn-success">Update</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</template>
+	
+
+	<!-- alerts -->
+
+	<template id="alerts_template">
+		<div class="alerts">
+			<app-alert v-for="alert in ui.alerts" :alert="alert"></app-alert>
+		</div>
+	</template>
+
+	<template id="alert_template">
+		<div class="alert alert-{{alert.type}}" role="alert"><strong>{{{alert.title}}}:</strong> {{{alert.message}}}</div>
+	</template>
+
+
+	<!-- js -->
+	<script src="lib/jquery/dist/jquery.js"></script>
+	<script src="lib/jquery-smooth-scroll/jquery.smooth-scroll.js"></script>
+	<script src="lib/bootstrap/dist/js/bootstrap.js"></script>
+	<script src="lib/vue/dist/vue.js"></script>
+	<script src="lib/vue-router/dist/vue-router.js"></script>
+	<script src="store.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>

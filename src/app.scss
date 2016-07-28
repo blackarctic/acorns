@@ -1,0 +1,71 @@
+
+/* colors */
+
+$primary_color: #74939f;
+$light_color: #ebebeb;
+$dark_color: #353535;
+
+
+/* animations */
+
+@keyframes in_from_left {
+	0% { transform: translateX(-100%); opacity: 0; }
+	10% { transform: translateX(0%); opacity: 1; }
+	90% { transform: translateX(0%); opacity: 1; }
+	100% { transform: translateX(-100%); opacity: 0; }
+}
+
+
+/* general */
+
+.section {
+	margin-top: 15px;
+}
+
+.subsection {
+	margin-top: 50px;
+}
+
+
+/* app */
+
+#app {
+	margin-bottom: 30px;
+}
+
+
+/* nav */
+
+.navbar-brand img {
+	transform: translateY(-25%);
+	height: 180%;
+}
+
+
+/* alerts */
+
+.alerts {
+	position: fixed;
+	top: 20px;
+	left: 20px;
+	width: 80%;
+	max-width: 500px; 
+	z-index: 10000;
+}
+.alerts .alert {
+	box-shadow: 0 0 20px 1px rgba(0,0,0,0.80);
+	animation-name: in_from_left;
+	animation-duration: 2s;
+}
+
+/* details */
+
+.details {
+	display: flex;
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+
+.details > div {
+	margin: 10px;
+}
