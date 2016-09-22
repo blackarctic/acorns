@@ -24,10 +24,13 @@ let store = (function () {
 	let data = {
 		places: {},
 		things: {},
+		users: {},
+		user: {},
 		ui: {
 			alerts: [],
 			place: {},
 			thing: {},
+			user: {},
 			places_filter: "",
 			things_filter: "",
 			add_to_moving_things_filter: "",
@@ -42,14 +45,8 @@ let store = (function () {
 		},
 	};
 
-	let public_data = {
-		places: data.places,
-		things: data.things,
-		ui: data.ui,
-	}
-
 	let get_data = function () {
-		return public_data;
+		return data;
 	};
 
 
@@ -123,6 +120,14 @@ let store = (function () {
 			things_count: 0,
 			history: [],
 		};
+		let test_user_0 = {
+			id: "c3f8dd61-140a-4c8a-9c63-f2d6c11e039b",
+			first_name: "John",
+			last_name: "Mogley",
+			email: "jmogley@email.com",
+			username: "john",
+			password: "password",
+		};
 
 		// link test data
 		test_thing_0.place = test_place_0;
@@ -131,6 +136,7 @@ let store = (function () {
 		Vue.set(test_place_0.things, test_thing_1.id, test_thing_1);
 
 		// insert test data
+		Vue.set(data.users, test_user_0.id, test_user_0);
 		Vue.set(data.things, test_thing_0.id, test_thing_0);
 		Vue.set(data.things, test_thing_1.id, test_thing_1);
 		Vue.set(data.places, test_place_0.id, test_place_0);
@@ -150,6 +156,128 @@ let store = (function () {
 			data.ui.alerts.shift();
 		}, 2000);
 	}
+
+
+	/* users */
+
+	let attempt_login = function () {
+		// copy the user and assign id
+		let user = Object.assign({}, data.ui.user);
+
+		// clean up the attributes
+		user.username = user.username.trim().toLowerCase();
+
+		// check the attributes
+		if (!user.username) {
+			return { error:true, type:"MISSING_USERNAME" };
+		}
+		if (!user.password) {
+			return { error:true, type:"MISSING_PASSWORD" };
+		}
+
+		// attempt the login
+		for (let i in data.users) {
+			if (data.users.hasOwnProperty(i)) {
+				let potential = data.users[i];
+				if (potential.username === user.username ||
+					potential.email === user.username) {
+					if (potential.password === user.password) {
+						data.ui.user = {};
+						data.user = Object.assign({}, potential);
+						return data.user;
+					}
+				}
+			}
+		}
+		return { error:true, type:"LOGIN_FAILED" };
+	};
+
+	let logout = function () {
+		data.user = {};
+	};
+
+	let get_user = function (id) {
+		if (data.users.hasOwnProperty(id)) {
+			return data.users[id];
+		}
+		return { error:true, type:"USER_NOT_FOUND" };
+	};
+
+	let create_user = function () {
+		// copy the user and assign id
+		let user = Object.assign({id: uuid(), role: "admin"}, data.ui.user);
+
+		// clean up the attributes
+		user.first_name = user.first_name.trim();
+		user.last_name = user.last_name.trim();
+		user.email = user.email.trim().toLowerCase();
+		user.confirm_email = user.confirm_email.trim().toLowerCase();
+		user.username = user.username.toLowerCase();
+
+		// check the attributes
+		if (!user.id) {
+			return { error:true, type:"MISSING_ID" };
+		}
+		if (!user.first_name) {
+			return { error:true, type:"MISSING_FIRST_NAME" };
+		}
+		if (!user.last_name) {
+			return { error:true, type:"MISSING_LAST_NAME" };
+		}
+		if (!user.email) {
+			return { error:true, type:"MISSING_EMAIL" };
+		}
+		if (user.email !== user.confirm_email) {
+			return { error:true, type:"EMAIL_MISMATCH" };
+		}
+		if (!user.username) {
+			return { error:true, type:"MISSING_USERNAME" };
+		}
+		if (!user.password) {
+			return { error:true, type:"MISSING_PASSWORD" };
+		}
+		if (user.email.length > 50 ||
+			user.email.lastIndexOf("@") === -1 ||
+			user.email.lastIndexOf(".") === -1 ||
+			user.email.lastIndexOf("@") > user.email.lastIndexOf(".")) {
+			return { error:true, type:"INVALID_EMAIL" };
+		}
+		if (user.username.length > 16 ||
+			user.username.search(/^[a-zA-Z0-9]*$/) !== 0) {
+			return { error:true, type:"INVALID_USERNAME" };
+		}
+		if (user.password.length < 8 ||
+			user.password.length > 50 ||
+			user.password.search(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{0,}$/) !== 0) {
+			return { error:true, type:"INVALID_PASSWORD" };
+		}
+		if (user.first_name.length > 50) {
+			return { error:true, type:"INVALID_FIRST_NAME" };
+		}
+		if (user.last_name.length > 50) {
+			return { error:true, type:"INVALID_LAST_NAME" };
+		}
+
+		// clear out unnecessities
+		delete user.confirm_email;
+
+		// add the user
+		if (!data.users.hasOwnProperty(user.id)) {
+			Vue.set(data.users, user.id, user);
+		}
+		else {
+			return { error:true, type:"DUPLICATE_ID" };
+		}
+
+		// clear the ui user
+		data.ui.user = {};
+
+		// log in as user
+		data.user = user;
+
+		// return the newly created user
+		return user;
+	};
 
 
 	/* places */
@@ -406,7 +534,6 @@ let store = (function () {
 			count: moving_things_count,
 			place: new_place,
 		};
-		return new_place;
 	};
 
 
@@ -562,6 +689,9 @@ let store = (function () {
 		for (let prop in thing_props) {
 			let new_val;
 			let old_val;
+			if (prop === "place") { // skip. this will be recorded in the next block.
+				continue;
+			}
 			if (thing.hasOwnProperty(prop)) {
 				new_val = thing[prop];
 			}
@@ -688,6 +818,10 @@ let store = (function () {
 		get_ui_default,
 		get_data,
 		do_alert,
+		attempt_login,
+		logout,
+		get_user,
+		create_user,
 		get_place,
 		create_place,
 		update_place,

@@ -8,9 +8,9 @@ var del = require('del');
 
 var prep = function () {
 
-	// prep external libraries
-	gulp.src('node_modules/**/*')
-	.pipe(gulp.dest('dist/lib'));
+	// prep external libraries (uncomment to copy all libraries over)
+	// gulp.src('node_modules/**/*')
+	// .pipe(gulp.dest('dist/lib'));
 
 	// prep favicon
 	gulp.src('src/favicon.ico')

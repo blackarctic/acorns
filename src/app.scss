@@ -16,6 +16,15 @@ $dark_color: #353535;
 }
 
 
+/* utilities */
+
+@media (min-width: 0px) and (max-width: 364px) {
+    .hidden-xxs {
+        display: none !important;
+    }
+}
+
+
 /* general */
 
 .section {
@@ -58,6 +67,7 @@ $dark_color: #353535;
 	animation-duration: 2s;
 }
 
+
 /* details */
 
 .details {
@@ -68,4 +78,13 @@ $dark_color: #353535;
 
 .details > div {
 	margin: 10px;
+}
+
+
+/* forms */
+
+.field-fine-print {
+	margin-left: 20px;
+	font-size: 65%;
+	opacity: .75;
 }

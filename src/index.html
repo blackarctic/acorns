@@ -27,7 +27,7 @@
 		<nav class="navbar navbar-default">
 			<div class="container-fluid">
 				<div class="navbar-header">
-					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main_nav_collapse" aria-expanded="false">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main_nav_collapse" aria-expanded="false" v-if="user.username">
 						<span class="sr-only">Toggle navigation</span>
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
@@ -35,7 +35,7 @@
 					</button>
 					<a class="navbar-brand" href="#"><img src="img/logo_with_text_blue.png"></a>
 				</div>
-				<div class="collapse navbar-collapse" id="main_nav_collapse">
+				<div class="collapse navbar-collapse" id="main_nav_collapse" v-if="user.username">
 					<ul class="nav navbar-nav navbar-right">
 						<li v-bind:class="{ 'active': $route.group === 'places' }"><a v-link="{ path: '/places' }"><i class="fa fa-globe" aria-hidden="true"></i> Places</a></li>
 						<li v-bind:class="{ 'active': $route.group === 'things' }"><a v-link="{ path: '/things' }"><i class="fa fa-briefcase" aria-hidden="true"></i> Things</a></li>
@@ -49,7 +49,7 @@
 								<li v-bind:class="{ 'active': $route.name === 'preferences' }"><a v-link="{ path: '/things' }"><i class="fa fa-sliders" aria-hidden="true"></i> Preferences</a></li>
 								<li v-bind:class="{ 'active': $route.name === 'users' }"><a v-link="{ path: '/things' }"><i class="fa fa-users" aria-hidden="true"></i> Users</a></li>
 								<li role="separator" class="divider"></li>
-								<li><a v-link="{ path: '/logout' }"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a></li>
+								<li><a @click.prevent="logout" href=""><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a></li>
 							</ul>
 						</li>
 					</ul>
@@ -437,7 +437,7 @@
 						class="list-group-item"
 						v-link="{ path: '/things/' + thing.id }">
 						{{thing.brand}} {{thing.type}}
-						<span class="badge">{{thing.place.name}}</span>
+						<span class="badge hidden-xs">{{thing.place.name}}</span>
 						<span class="badge">{{thing.tracking}}</span>
 					</a>
 					<a v-if="matching_things.length > ui.all_things_view_length"
@@ -653,6 +653,74 @@
 						</div>
 					</form>
 				</div>
+			</div>
+		</div>
+	</template>
+
+
+	<!-- login -->
+
+	<template id="login_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<div class="section">
+				<h2>Login</h2>
+
+				<form @submit.prevent="attempt_login">
+						<div class="form-group">
+							<label for="username_input">Username</label>
+							<input type="text" class="form-control" id="username_input" placeholder="Username" required v-model="ui.user.username" autocomplete="on">
+						</div>
+						<div class="form-group">
+							<label for="username_input">Password</label>
+							<input type="password" class="form-control" id="password_input" placeholder="Password" required v-model="ui.user.password" autocomplete="on">
+						</div>
+						<button type="submit" class="btn btn-success">Login</button>
+				</form>
+			</div>
+		</div>
+	</template>
+
+
+	<!-- start -->
+
+	<template id="start_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<div class="section">
+				<h2>Welcome! Let's get started...</h2>
+
+				<h3 class="subsection">Setup your account</h3>
+
+				<form @submit.prevent="create_user" class="section">
+						<div class="form-group">
+							<label for="first_name_input">First Name</label>
+							<input type="text" class="form-control" id="first_name_input" placeholder="First Name" required v-model="ui.user.first_name" autocomplete="off" maxlength="50">
+						</div>
+						<div class="form-group">
+							<label for="last_name_input">Last Name</label>
+							<input type="text" class="form-control" id="last_name_input" placeholder="Last Name" required v-model="ui.user.last_name" autocomplete="off" maxlength="50">
+						</div>
+						<div class="form-group">
+							<label for="email_input">Email</label>
+							<input type="email" class="form-control" id="email_input" placeholder="Email" required v-model="ui.user.email" autocomplete="off" maxlength="50">
+						</div>
+						<div class="form-group">
+							<label for="confirm_email_input">Confirm Email</label>
+							<input type="email" class="form-control" id="confirm_email_input" placeholder="Confirm Email" required v-model="ui.user.confirm_email" autocomplete="off" maxlength="50">
+						</div>
+						<div class="form-group">
+							<label for="username_input">Username <span class="field-fine-print">Only letters and numbers. 16 characters or less.</span></label>
+							<input type="text" class="form-control" id="username_input" placeholder="Username" required v-model="ui.user.username" autocomplete="off" maxlength="16">
+						</div>
+						<div class="form-group">
+							<label for="username_input">Password <span class="field-fine-print">Must include lowercase, uppercase, and number</span></label>
+							<input type="password" class="form-control" id="password_input" placeholder="Password" required v-model="ui.user.password" autocomplete="off" maxlength="50">
+						</div>
+						<button type="submit" class="btn btn-success">Create Master Account</button>
+				</form>
 			</div>
 		</div>
 	</template>

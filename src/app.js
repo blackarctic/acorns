@@ -32,6 +32,15 @@ Vue.filter("datetime", function (val) {
 
 let Header = Vue.extend({
 	template: "#header_template",
+	data: store.get_data,
+	methods: {
+		logout: function () {
+			let first_name = this.user.first_name;
+			store.logout();
+			store.do_alert("success", `Goodbye, ${first_name}`, `You have successfully logged out.`);
+			this.$router.go(`/login`);
+		}
+	}
 })
 Vue.component("app-header", Header);
 
@@ -51,12 +60,101 @@ let Alert = Vue.extend({
 Vue.component("app-alert", Alert);
 
 
+/**** login ****/
+
+let Login = Vue.extend({
+	template: "#login_template",
+	data: store.get_data,
+	created: function () {
+		if (Object.keys(this.users).length === 0) {
+			this.$router.go(`/start`);
+		}
+		if (this.user.username) {
+			this.$router.go(`/home`);
+		}
+	},
+	methods: {
+		attempt_login: function () {
+			let result = store.attempt_login();
+			if (result.error === true) {
+				let error_message = "An error has occurred.";
+				switch (result.type) {
+					case "MISSING_USERNAME":
+						error_message = "A username is required."; break;
+					case "MISSING_PASSWORD":
+						error_message = "A password is required."; break;
+					case "LOGIN_FAILED":
+						error_message = "Login failed. Please try again."; break;
+				}
+				store.do_alert("danger", "Error", error_message);
+			}
+			else {
+				store.do_alert("success", `Welcome, ${result.first_name}`, `You have successfully logged in.`);
+				this.$router.go(`/home`);
+			}
+		}
+	},
+});
+
+
+/**** start ****/
+
+let Start = Vue.extend({
+	template: "#start_template",
+	data: store.get_data,
+	created: function () {
+		if (Object.keys(this.users).length !== 0) {
+			this.$router.go(`/home`);
+		}
+	},
+	methods: {
+		create_user: function () {
+			let result = store.create_user();
+			if (result.error === true) {
+				let error_message = "An error has occurred.";
+				switch (result.type) {
+					case "MISSING_FIRST_NAME":
+						error_message = "Your first name is required."; break;
+					case "MISSING_LAST_NAME":
+						error_message = "Your last name is required."; break;
+					case "MISSING_EMAIL":
+						error_message = "Your email is required."; break;
+					case "EMAIL_MISMATCH":
+						error_message = "Your emails do not match."; break;
+					case "MISSING_USERNAME":
+						error_message = "A username is required."; break;
+					case "MISSING_PASSWORD":
+						error_message = "A password is required."; break;
+					case "INVALID_EMAIL":
+						error_message = "Your email is invalid."; break;
+					case "INVALID_FIRST_NAME":
+						error_message = "Your first name is invalid."; break;
+					case "INVALID_LAST_NAME":
+						error_message = "Your last name is invalid."; break;
+					case "INVALID_USERNAME":
+						error_message = "Your username is invalid. Please follow the guidelines."; break;
+					case "INVALID_PASSWORD":
+						error_message = "Your password is invalid. Please follow the guidelines."; break;
+				}
+				store.do_alert("danger", "Error", error_message);
+			}
+			else {
+				store.do_alert("success", `Welcome, ${result.first_name}`, `Your account was successfully created.`);
+				this.$router.go(`/home`);
+			}
+		}
+	}
+});
+
 /**** places ****/
 
 let Place = Vue.extend({
 	template: "#place_template",
 	data: store.get_data,
 	created: function () {
+		if (!this.user.username) {
+			this.$router.go('/login');
+		}
 		this.ui.things_filter = "";
 		this.ui.view_history = store.get_ui_default("view_history");
 		this.ui.history_view_length = store.get_ui_default("history_view_length");
@@ -188,6 +286,9 @@ let Places = Vue.extend({
 	template: "#places_template",
 	data: store.get_data,
 	created: function () {
+		if (!this.user.username) {
+			this.$router.go('/login');
+		}
 		this.ui.all_places_view_length = store.get_ui_default("all_places_view_length");
 		this.ui.places_filter = "";
 	},
@@ -418,6 +519,9 @@ let Thing = Vue.extend({
 	template: "#thing_template",
 	data: store.get_data,
 	created: function () {
+		if (!this.user.username) {
+			this.$router.go('/login');
+		}
 		this.ui.view_history = store.get_ui_default("view_history");
 		this.ui.history_view_length = store.get_ui_default("history_view_length");
 	},
@@ -516,6 +620,9 @@ let Things = Vue.extend({
 	template: "#things_template",
 	data: store.get_data,
 	created: function () {
+		if (!this.user.username) {
+			this.$router.go('/login');
+		}
 		this.ui.all_places_view_length = store.get_ui_default("all_places_view_length");
 		this.ui.things_filter = "";
 	},
@@ -697,6 +804,16 @@ let App = Vue.extend({
 let router = new VueRouter();
 
 router.map({
+	"/login": {
+		name: "login",
+		group: "login",
+		component: Login
+	},
+	"/start": {
+		name: "start",
+		group: "start",
+		component: Start
+	},
 	"/places": {
 		name: "places",
 		group: "places",
