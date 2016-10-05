@@ -72,6 +72,7 @@ let Login = Vue.extend({
 		if (this.user.username) {
 			this.$router.go(`/home`);
 		}
+		this.ui.user = {};
 	},
 	methods: {
 		attempt_login: function () {
@@ -160,6 +161,14 @@ let Place = Vue.extend({
 		this.ui.history_view_length = store.get_ui_default("history_view_length");
 		this.ui.things_view_length = store.get_ui_default("things_view_length");
 	},
+	ready: function () {
+		$("#move_things_to_place_modal").on("shown.bs.modal", function () {
+			$("#add_to_moving_things_list_search").focus();
+		});
+	},
+	beforeDestroy: function () {
+		$("#move_things_to_place_modal").off("shown.bs.modal");
+	},
 	computed: {
 		place: function () {
 			let result = store.get_place(this.$route.params.place_id);
@@ -193,6 +202,7 @@ let Place = Vue.extend({
 	methods: {
 		open_edit_place: function () {
 			this.ui.place = Object.assign({}, this.place);
+			$("#view_additional_options").collapse("hide");
 			$("#delete_place_confirm").collapse("hide");
 			$("#edit_place_modal").modal("show");
 		},
@@ -201,7 +211,10 @@ let Place = Vue.extend({
 			this.ui.moving_things = [];
 			this.ui.moving_things_view_length = store.get_ui_default("moving_things_view_length");
 			this.ui.place = Object.assign({}, this.place);
-			$("#move_things_to_place_modal").modal("show");
+			$("#move_things_to_place_modal").modal("show", function () {
+				alert("Hello");
+			});
+			$("#add_to_moving_things_list_search").focus();
 		},
 		matches_things_filter: function (thing) {
 			// extract the filters
@@ -253,15 +266,15 @@ let Place = Vue.extend({
 			}
 			switch (event.type) {
 				case "PLACE_CREATED":
-					return `<i class="fa fa-globe" aria-hidden="true"></i> &nbsp; ${event.place.name} created`;
+					return `<i class="fa fa-globe" aria-hidden="true"></i> &nbsp; ${event.place.name.custom_escape_html()} created`;
 				case "PLACE_DETAIL_UPDATED":
 				case "PLACE_DETAIL_ADDED":
 				case "PLACE_DETAIL_REMOVED":
-					return `<i class="fa fa-pencil" aria-hidden="true" aria-label="Detail Change"></i> &nbsp; ${title}`;
+					return `<i class="fa fa-pencil" aria-hidden="true" aria-label="Detail Change"></i> &nbsp; ${title.custom_escape_html()}`;
 				case "THING_ADDED":
-					return `<i class="fa fa-plus" aria-hidden="true" aria-label="Added"></i> &nbsp; ${event.thing.brand} ${event.thing.type}`;
+					return `<i class="fa fa-plus" aria-hidden="true" aria-label="Added"></i> &nbsp; ${event.thing.brand.custom_escape_html()} ${event.thing.type.custom_escape_html()}`;
 				case "THING_REMOVED":
-					return `<i class="fa fa-times" aria-hidden="true" aria-label="Removed"></i> &nbsp; ${event.thing.brand} ${event.thing.type}`;
+					return `<i class="fa fa-times" aria-hidden="true" aria-label="Removed"></i> &nbsp; ${event.thing.brand.custom_escape_html()} ${event.thing.type.custom_escape_html()}`;
 				default:
 					return `Unknown Event Occurred`;
 			}
@@ -269,14 +282,14 @@ let Place = Vue.extend({
 		history_event_body: function (event) {
 			switch (event.type) {
 				case "PLACE_DETAIL_UPDATED":
-					return `<strong>${event.from}</strong> to <strong>${event.to}</strong>`;
+					return `<strong>${event.from.custom_escape_html()}</strong> to <strong>${event.to.custom_escape_html()}</strong>`;
 				case "PLACE_DETAIL_ADDED":
-					return `added <strong>${event.val}</strong>`;
+					return `added <strong>${event.val.custom_escape_html()}</strong>`;
 				case "PLACE_DETAIL_REMOVED":
-					return `removed <strong>${event.val}</strong>`;
+					return `removed <strong>${event.val.custom_escape_html()}</strong>`;
 				case "THING_ADDED":
 				case "THING_REMOVED":
-					return `Tracking: <strong>${event.thing.tracking}</strong><br>Serial: <strong>${event.thing.serial}</strong><br>Model: <strong>${event.thing.model}</strong>`;
+					return `Tracking: <strong>${event.thing.tracking.custom_escape_html()}</strong><br>Serial: <strong>${event.thing.serial.custom_escape_html()}</strong><br>Model: <strong>${event.thing.model.custom_escape_html()}</strong>`;
 			}
 		},
 	}
@@ -438,11 +451,13 @@ let Move_Things_To_Place = Vue.extend({
 			this.ui.moving_things.push(thing);
 			this.ui.add_to_moving_things_filter = "";
 			this.ui.moving_things_view_length = store.get_ui_default("moving_things_view_length");
+			$("#add_to_moving_things_list_search").focus();
 		},
 		remove_from_moving_things: function (thing) {
 			for (let i=0; i<this.ui.moving_things.length; i++) {
 				if (this.ui.moving_things[i].id === thing.id) {
 					this.ui.moving_things.splice(i,1);
+					$("#add_to_moving_things_list_search").focus();
 					return;
 				}
 			}
@@ -508,6 +523,85 @@ let Move_Things_To_Place = Vue.extend({
 				return this.places[place.id].things.hasOwnProperty(thing.id);
 			}
 		},
+		focus_next: function (selectors) {
+			return this.focus_direction("next", selectors);
+		},
+		focus_prev: function (selectors) {
+			return this.focus_direction("prev", selectors);
+		},
+		focus_direction: function (direction, selectors) {
+			let found = false;
+			let prevent_count = 0;
+			let $curr = $(document.activeElement);
+			while(!found) {
+				if (prevent_count > 100) { return; }
+				let $el;
+				switch(direction) {
+					case "next":
+						let $next = $curr.next();
+						// if the current element has children, look at those
+						let $curr_children = $curr.children();
+						if ($curr_children.length !== 0) {
+							$el = $curr_children.first();
+							break;
+						}
+						// otherwise, if we have no next siblings, look at the next parent
+						if ($next.length === 0) {
+							$el = $curr;
+							while (true) {
+								let $parent = $el.parent();
+								let $next_parent = $parent.next();
+								if ($next_parent.length !== 0) {
+									$el = $next_parent;
+									break;
+								}
+								else {
+									$el = $parent;
+									if ($el.hasClass("focus_barrier")) { return; }
+								}
+							}
+							break;
+						}
+						// otherwise, look at the next sibling
+						$el = $next;
+						break;
+					case "prev":
+						let $prev = $curr.prev();
+						// if we have no prev siblings, look at the parent
+						if ($prev.length === 0) {
+							$el = $curr.parent();
+							break;
+						}
+						// otherwise, if the prev sibling has children, look at those (starting from the last)
+						let prev_children = $prev.children();
+						if (prev_children.length !== 0) {
+							$el = prev_children.last();
+							while (true) {
+								let $children = $el.children();
+								if ($children.length === 0) { break; }
+								$el = $el.children().last();
+								if ($el.hasClass("focus_barrier")) { return; }
+							}
+							break;
+						}
+						// otherwise, look at that prev sibling
+						$el = $prev;
+						break;
+					default:
+						return;
+				}
+				if ($el.hasClass("focus_barrier")) { return; }
+				// see if this el matches any selectors
+				for (let i=0; i<selectors.length; i++) {
+					let selector = selectors[i];
+					if ($el.is(selector)) {
+						$el.focus(); found = true; break;
+					}
+				}
+				$curr = $el;
+				prevent_count++;
+			}
+		}
 	},
 });
 Vue.component("app-move-things-to-place", Move_Things_To_Place);
@@ -590,11 +684,11 @@ let Thing = Vue.extend({
 			}
 			switch (event.type) {
 				case "THING_CREATED":
-					return `<i class="fa fa-briefcase" aria-hidden="true"></i> &nbsp; ${event.thing.brand} ${event.thing.type} created`;
+					return `<i class="fa fa-briefcase" aria-hidden="true"></i> &nbsp; ${event.thing.brand.custom_escape_html()} ${event.thing.type.custom_escape_html()} created`;
 				case "THING_DETAIL_UPDATED":
 				case "THING_DETAIL_ADDED":
 				case "THING_DETAIL_REMOVED":
-					return `<i class="fa fa-pencil" aria-hidden="true" aria-label="Detail Change"></i> &nbsp; ${title}`;
+					return `<i class="fa fa-pencil" aria-hidden="true" aria-label="Detail Change"></i> &nbsp; ${title.custom_escape_html()}`;
 				case "THING_MOVED":
 					return `<i class="fa fa-arrow-right" aria-hidden="true" aria-label="Moved"></i> &nbsp; Moved`;
 				default:
@@ -604,13 +698,13 @@ let Thing = Vue.extend({
 		history_event_body: function (event) {
 			switch (event.type) {
 				case "THING_DETAIL_UPDATED":
-					return `<strong>${event.from}</strong> to <strong>${event.to}</strong>`;
+					return `<strong>${event.from.custom_escape_html()}</strong> to <strong>${event.to.custom_escape_html()}</strong>`;
 				case "THING_DETAIL_ADDED":
-					return `added <strong>${event.val}</strong>`;
+					return `added <strong>${event.val.custom_escape_html()}</strong>`;
 				case "THING_DETAIL_REMOVED":
-					return `removed <strong>${event.val}</strong>`;
+					return `removed <strong>${event.val.custom_escape_html()}</strong>`;
 				case "THING_MOVED":
-					return `from <a href="#!/places/${event.from.id}"><strong>${event.from.name}</strong></a> to <a href="#!/places/${event.to.id}"><strong>${event.to.name}</strong></a>`;
+					return `from <a href="#!/places/${event.from.id.custom_escape_html()}"><strong>${event.from.name.custom_escape_html()}</strong></a> to <a href="#!/places/${event.to.id.custom_escape_html()}"><strong>${event.to.name.custom_escape_html()}</strong></a>`;
 			}
 		},
 	}
@@ -791,6 +885,100 @@ let Edit_Thing = Vue.extend({
 Vue.component("app-edit-thing", Edit_Thing);
 
 
+/**** profile ****/
+
+let Profile = Vue.extend({
+	template: "#profile_template",
+	data: store.get_data,
+	created: function () {
+		if (!this.user.username) {
+			this.$router.go('/login');
+		}
+	},
+	methods: {
+		open_edit_profile: function () {
+			this.ui.user = Object.assign({}, this.user);
+			$("#change_user_email").collapse("hide");
+			$("#change_user_password").collapse("hide");
+			$("#delete_user_confirm").collapse("hide");
+			$("#edit_profile_modal").modal("show");
+		},
+	}
+});
+
+let Edit_Profile = Vue.extend({
+	template: "#edit_profile_template",
+	data: store.get_data,
+	methods: {
+		edit_profile: function () {
+			let result = store.update_user();
+			if (result.error === true) {
+				let error_message = "An error has occurred.";
+				switch (result.type) {
+					case "MISSING_FIRST_NAME":
+						error_message = "Your first name is required."; break;
+					case "MISSING_LAST_NAME":
+						error_message = "Your last name is required."; break;
+					case "MISSING_EMAIL":
+						error_message = "Your email is required."; break;
+					case "MISSING_USERNAME":
+						error_message = "Your username is required."; break;
+					case "INVALID_EMAIL":
+						error_message = "Your email is invalid."; break;
+					case "INVALID_USERNAME":
+						error_message = "Your username is invalid. Please follow the guidelines."; break;
+					case "INVALID_PASSWORD":
+						error_message = "Your password is invalid. Please follow the guidelines."; break;
+					case "EMAIL_MISMATCH":
+						error_message = "Your emails do not match."; break;
+					case "PASSWORD_MISMATCH":
+						error_message = "Your passwords do not match."; break;
+					case "OLD_PASSWORD_MISMATCH":
+						error_message = "Current password is incorrect."; break;
+				}
+				store.do_alert("danger", "Error", error_message);
+			}
+			else {
+				store.do_alert("success", "Success", `Your profile was successfully updated.`);
+				$("#edit_profile_modal").modal("hide");
+			}
+		},
+		delete_user: function () {
+			let result = store.remove_user();
+			if (result.error === true) {
+				let error_message = "An error has occurred.";
+				switch (result.type) {
+					case "USER_NOT_FOUND":
+						error_message = "Your account could not be found."; break;
+				}
+				store.do_alert("danger", "Error", error_message);
+			}
+			else {
+				store.do_alert("success", "Success", `Your account was successfully removed.`);
+				$("#edit_profile_modal").modal("hide");
+				store.logout();
+				this.$router.go("/login");
+			}
+		},
+	},
+});
+Vue.component("app-edit-profile", Edit_Profile);
+
+
+/**** preferences ****/
+
+let Preferences = Vue.extend({
+	template: "#preferences_template",
+	data: store.get_data,
+	created: function () {
+		if (!this.user.username) {
+			this.$router.go('/login');
+		}
+		this.ui.user = Object.assign({}, this.user);
+	},
+});
+
+
 /**** app ****/
 
 let App = Vue.extend({
@@ -838,6 +1026,16 @@ router.map({
 		name: "thing",
 		group: "things",
 		component: Thing
+	},
+	"/profile": {
+		name: "profile",
+		group: "profile",
+		component: Profile
+	},
+	"/preferences": {
+		name: "preferences",
+		group: "preferences",
+		component: Preferences
 	},
 });
 

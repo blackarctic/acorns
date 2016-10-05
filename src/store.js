@@ -3,12 +3,14 @@ let store = (function () {
 	/* defaults */
 
 	let ui_defaults = {
-		all_places_view_length: 2,
-		all_things_view_length: 2,
-		things_view_length: 3,
-		moving_things_view_length: 1,
-		history_view_length: 3,
+		all_places_view_length: 10,
+		all_things_view_length: 10,
+		things_view_length: 5,
+		moving_things_view_length: 3,
+		history_view_length: 5,
 		view_history: false,
+		username_guidelines: "Only letters and numbers. 16 characters or less.",
+		password_guidelines: "Must include lowercase, uppercase, and number.",
 	};
 
 	let get_ui_default = function(key) {
@@ -42,6 +44,8 @@ let store = (function () {
 			moving_things_view_length: ui_defaults.moving_things_view_length,
 			history_view_length: ui_defaults.history_view_length,
 			view_history: ui_defaults.view_history,
+			username_guidelines: ui_defaults.username_guidelines,
+			password_guidelines: ui_defaults.password_guidelines,
 		},
 	};
 
@@ -53,7 +57,7 @@ let store = (function () {
 	/* utilities */
 
 	let uuid = function() {
-		// uuid generator from https://jsfiddle.net/briguy37/2MVFd/
+		// from https://jsfiddle.net/briguy37/2MVFd/
 		let d = new Date().getTime();
 		let uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
 			let r = (d + Math.random()*16)%16 | 0;
@@ -61,6 +65,22 @@ let store = (function () {
 			return (c=="x" ? r : (r&0x3|0x8)).toString(16);
 		});
 		return uuid;
+	};
+
+	String.prototype.custom_escape_html = function() {
+		// from http://shebang.brandonmintern.com/foolproof-html-escaping-in-javascript/
+		let div = document.createElement('div');
+		div.appendChild(document.createTextNode(this));
+		return div.innerHTML;
+	};
+
+	let clear_obj = function (obj) {
+		for (let key in obj) {
+			if (obj.hasOwnProperty(key)) {
+				delete obj[key];
+			}
+		}
+		return obj;
 	};
 
 	let take_place_snapshot = function (place) {
@@ -120,6 +140,13 @@ let store = (function () {
 			things_count: 0,
 			history: [],
 		};
+		let test_place_1 = {
+			id: "c3f8dd61-10ea-4c8a-9c63-f2d6c144039b",
+			name: "Riley Urch",
+			things: {},
+			things_count: 0,
+			history: [],
+		};
 		let test_user_0 = {
 			id: "c3f8dd61-140a-4c8a-9c63-f2d6c11e039b",
 			first_name: "John",
@@ -127,6 +154,9 @@ let store = (function () {
 			email: "jmogley@email.com",
 			username: "john",
 			password: "password",
+			preferences: {
+				receive_email_notifications: true,
+			},
 		};
 
 		// link test data
@@ -140,6 +170,8 @@ let store = (function () {
 		Vue.set(data.things, test_thing_0.id, test_thing_0);
 		Vue.set(data.things, test_thing_1.id, test_thing_1);
 		Vue.set(data.places, test_place_0.id, test_place_0);
+		Vue.set(data.places, test_place_1.id, test_place_1);
+		data.user = test_user_0;
 		data.places[test_place_0.id].things_count = 2;
 	};
 
@@ -165,7 +197,7 @@ let store = (function () {
 		let user = Object.assign({}, data.ui.user);
 
 		// clean up the attributes
-		user.username = user.username.trim().toLowerCase();
+		if (user.username) user.username = user.username.trim().toLowerCase();
 
 		// check the attributes
 		if (!user.username) {
@@ -208,11 +240,12 @@ let store = (function () {
 		let user = Object.assign({id: uuid(), role: "admin"}, data.ui.user);
 
 		// clean up the attributes
-		user.first_name = user.first_name.trim();
-		user.last_name = user.last_name.trim();
-		user.email = user.email.trim().toLowerCase();
-		user.confirm_email = user.confirm_email.trim().toLowerCase();
-		user.username = user.username.toLowerCase();
+		if (user.first_name) user.first_name = user.first_name.trim();
+		if (user.last_name) user.last_name = user.last_name.trim();
+		if (user.email) user.email = user.email.trim().toLowerCase();
+		if (user.confirm_email) user.confirm_email = user.confirm_email.trim().toLowerCase();
+		if (user.username) user.username = user.username.toLowerCase();
+		user.preferences = {};
 
 		// check the attributes
 		if (!user.id) {
@@ -279,6 +312,124 @@ let store = (function () {
 		return user;
 	};
 
+	let update_user = function () {
+		// copy the user
+		let user = Object.assign({}, data.ui.user);
+
+		// clean up the attributes
+		if (user.first_name) user.first_name = user.first_name.trim();
+		if (user.last_name) user.last_name = user.last_name.trim();
+		if (user.email) user.email = user.email.trim().toLowerCase();
+		if (user.confirm_email) user.confirm_email = user.confirm_email.trim().toLowerCase();
+		if (user.username) user.username = user.username.toLowerCase();
+		if (user.new_password) user.password = user.new_password;
+		if (!user.change_email) {
+			user.email = data.user.email;
+			user.confirm_email = data.user.email;
+		}
+		if (!user.change_password) {
+			user.old_password = data.user.password;
+			user.password = data.user.password;
+			user.new_confirm_password = data.user.password;
+		}
+
+		// check the attributes
+		if (!user.id) {
+			return { error:true, type:"MISSING_ID" };
+		}
+		if (!user.first_name) {
+			return { error:true, type:"MISSING_FIRST_NAME" };
+		}
+		if (!user.last_name) {
+			return { error:true, type:"MISSING_LAST_NAME" };
+		}
+		if (!user.email) {
+			return { error:true, type:"MISSING_EMAIL" };
+		}
+		if (user.email !== user.confirm_email && user.change_email) {
+			return { error:true, type:"EMAIL_MISMATCH" };
+		}
+		if (user.old_password !== data.user.password && user.change_password) {
+			return { error:true, type:"OLD_PASSWORD_MISMATCH" };
+		}
+		if (user.password !== user.new_confirm_password && user.change_password) {
+			return { error:true, type:"PASSWORD_MISMATCH" };
+		}
+		if (!user.username) {
+			return { error:true, type:"MISSING_USERNAME" };
+		}
+		if (!user.password && user.change_password) {
+			return { error:true, type:"MISSING_PASSWORD" };
+		}
+		if ((user.email.length > 50 ||
+			user.email.lastIndexOf("@") === -1 ||
+			user.email.lastIndexOf(".") === -1 ||
+			user.email.lastIndexOf("@") > user.email.lastIndexOf(".")) &&
+			user.change_email) {
+			return { error:true, type:"INVALID_EMAIL" };
+		}
+		if (user.username.length > 16 ||
+			user.username.search(/^[a-zA-Z0-9]*$/) !== 0) {
+			return { error:true, type:"INVALID_USERNAME" };
+		}
+		if ((user.password.length < 8 ||
+			user.password.length > 50 ||
+			user.password.search(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{0,}$/) !== 0) &&
+			user.change_password) {
+			return { error:true, type:"INVALID_PASSWORD" };
+		}
+		if (user.first_name.length > 50) {
+			return { error:true, type:"INVALID_FIRST_NAME" };
+		}
+		if (user.last_name.length > 50) {
+			return { error:true, type:"INVALID_LAST_NAME" };
+		}
+
+		// clear out unnecessities
+		delete user.confirm_email;
+		delete user.old_password;
+		delete user.new_password;
+		delete user.new_confirm_password;
+		delete user.change_email;
+		delete user.change_password;
+
+		// update the user in users
+		if (data.users.hasOwnProperty(user.id)) {
+			Vue.set(data.users, user.id, user);
+		}
+		else {
+			return { error:true, type:"USER_NOT_FOUND" };
+		}
+
+		// clear the ui place
+		data.ui.user = {};
+
+		// update logged in user
+		data.user = user;
+
+		// return the updated place
+		return user;
+	};
+
+	let remove_user = function () {
+		// copy the user
+		let user = Object.assign({}, data.ui.user);
+
+		// remove the user
+		if (data.users.hasOwnProperty(user.id)) {
+			delete data.users[user.id];
+		}
+		else {
+			return { error:true, type:"USER_NOT_FOUND" };
+		}
+
+		// clear the ui user
+		data.ui.user
+
+		// return the removed user
+		return user;
+	};
+
 
 	/* places */
 
@@ -306,6 +457,16 @@ let store = (function () {
 		place.things = {};
 		place.things_count = 0;
 		place.history = [];
+		if (!place.additional_options) {
+			place.address_line_1 = "";
+			place.address_line_2 = "";
+			place.address_city = "";
+			place.address_state = "";
+			place.address_zip = "";
+			place.email = "";
+			place.phone = "";
+			place.notes = "";
+		}
 
 		// check the attributes
 		if (!place.id) {
@@ -314,6 +475,9 @@ let store = (function () {
 		if (!place.name) {
 			return { error:true, type:"MISSING_NAME" };
 		}
+
+		// clear out unnecessities
+		delete place.additional_options;
 
 		// set history
 		let place_snapshot = take_place_snapshot(place);
@@ -352,6 +516,17 @@ let store = (function () {
 		if (place.email) place.email = place.email.trim();
 		if (place.phone) place.phone = place.phone.trim().replace(/ |-|\(|\)|\./g,"");
 		if (place.notes) place.notes = place.notes.trim();
+		if (!place.additional_options) {
+			let old_place = data.places[place.id];
+			place.address_line_1 = old_place.address_line_1;
+			place.address_line_2 = old_place.address_line_2;
+			place.address_city = old_place.address_city;
+			place.address_state = old_place.address_state;
+			place.address_zip = old_place.address_zip;
+			place.email = old_place.email;
+			place.phone = old_place.phone;
+			place.notes = old_place.notes;
+		}
 
 		// check the attributes
 		if (!place.id) {
@@ -360,6 +535,9 @@ let store = (function () {
 		if (!place.name) {
 			return { error:true, type:"MISSING_NAME" };
 		}
+
+		// clear out unnecessities
+		delete place.additional_options;
 
 		// set history
 		let old_place = data.places[place.id];
@@ -822,6 +1000,8 @@ let store = (function () {
 		logout,
 		get_user,
 		create_user,
+		update_user,
+		remove_user,
 		get_place,
 		create_place,
 		update_place,

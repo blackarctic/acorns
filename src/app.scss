@@ -81,10 +81,22 @@ $dark_color: #353535;
 }
 
 
+/* lists */
+
+.list-group-item.focused {
+	color: #555;
+	text-decoration: none;
+	background-color: #f5f5f5;
+}
+
+
 /* forms */
 
 .field-fine-print {
 	margin-left: 20px;
 	font-size: 65%;
 	opacity: .75;
+}
+.checkbox.disabled {
+	opacity: .50;
 }

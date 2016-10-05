@@ -39,15 +39,15 @@
 					<ul class="nav navbar-nav navbar-right">
 						<li v-bind:class="{ 'active': $route.group === 'places' }"><a v-link="{ path: '/places' }"><i class="fa fa-globe" aria-hidden="true"></i> Places</a></li>
 						<li v-bind:class="{ 'active': $route.group === 'things' }"><a v-link="{ path: '/things' }"><i class="fa fa-briefcase" aria-hidden="true"></i> Things</a></li>
-						<li class="dropdown" v-bind:class="{ 'active': $route.group === 'settings' }">
+						<li v-bind:class="{ 'active': $route.group === 'users' }"><a v-link="{ path: '/users' }"><i class="fa fa-users" aria-hidden="true"></i> Users</a></li>
+						<li class="dropdown" v-bind:class="{ 'active': $route.group === 'account' }">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-								<i class="fa fa-cog" aria-hidden="true"></i> Settings
+								<strong>{{user.first_name}} {{user.last_name}}</strong>
 								<span class="caret"></span>
 							</a>
 							<ul class="dropdown-menu">
-								<li v-bind:class="{ 'active': $route.name === 'profile' }"><a v-link="{ path: '/things' }"><i class="fa fa-user" aria-hidden="true"></i> Profile</a></li>
-								<li v-bind:class="{ 'active': $route.name === 'preferences' }"><a v-link="{ path: '/things' }"><i class="fa fa-sliders" aria-hidden="true"></i> Preferences</a></li>
-								<li v-bind:class="{ 'active': $route.name === 'users' }"><a v-link="{ path: '/things' }"><i class="fa fa-users" aria-hidden="true"></i> Users</a></li>
+								<li v-bind:class="{ 'active': $route.name === 'profile' }"><a v-link="{ path: '/profile' }"><i class="fa fa-user" aria-hidden="true"></i> Profile</a></li>
+								<li v-bind:class="{ 'active': $route.name === 'preferences' }"><a v-link="{ path: '/preferences' }"><i class="fa fa-sliders" aria-hidden="true"></i> Preferences</a></li>
 								<li role="separator" class="divider"></li>
 								<li><a @click.prevent="logout" href=""><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a></li>
 							</ul>
@@ -238,37 +238,47 @@
 								<label for="name_input">Name*</label>
 								<input type="text" class="form-control" id="name_input" placeholder="Name" required v-model="ui.place.name" autocomplete="off">
 							</div>
-							<div class="form-group">
-								<label for="address_line_1_input">Address Line 1</label>
-								<input type="text" class="form-control" id="address_line_1_input" placeholder="Address Line 1" v-model="ui.place.address_line_1" autocomplete="off">
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" data-toggle="collapse" data-target="#view_additional_options" aria-expanded="false" aria-controls="view_additional_options" v-model="ui.place.additional_options">
+									Additional Options
+								</label>
 							</div>
-							<div class="form-group">
-								<label for="address_line_2_input">Address Line 2</label>
-								<input type="text" class="form-control" id="address_line_2_input" placeholder="Address Line 2" v-model="ui.place.address_line_2" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="address_city_input">Address City</label>
-								<input type="text" class="form-control" id="address_city_input" placeholder="Address City" v-model="ui.place.address_city" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="address_state_input">Address State</label>
-								<input type="text" class="form-control" id="address_state_input" placeholder="Address State" v-model="ui.place.address_state" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="address_zip_input">Address Zip</label>
-								<input type="text" class="form-control" id="address_zip_input" placeholder="Address Zip" v-model="ui.place.address_zip" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="email_input">Email</label>
-								<input type="text" class="form-control" id="email_input" placeholder="Email" v-model="ui.place.email" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="phone_input">Phone</label>
-								<input type="text" class="form-control" id="phone_input" placeholder="Phone" v-model="ui.place.phone" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="notes_input">Notes</label>
-								<textarea class="form-control" rows="3" id="notes_input" placeholder="Notes" v-model="ui.place.notes" autocomplete="off"></textarea>
+							<div class="collapse" id="view_additional_options">
+								<div class="well">
+									<div class="form-group">
+										<label for="address_line_1_input">Address Line 1</label>
+										<input type="text" class="form-control" id="address_line_1_input" placeholder="Address Line 1" v-model="ui.place.address_line_1" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_line_2_input">Address Line 2</label>
+										<input type="text" class="form-control" id="address_line_2_input" placeholder="Address Line 2" v-model="ui.place.address_line_2" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_city_input">Address City</label>
+										<input type="text" class="form-control" id="address_city_input" placeholder="Address City" v-model="ui.place.address_city" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_state_input">Address State</label>
+										<input type="text" class="form-control" id="address_state_input" placeholder="Address State" v-model="ui.place.address_state" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_zip_input">Address Zip</label>
+										<input type="text" class="form-control" id="address_zip_input" placeholder="Address Zip" v-model="ui.place.address_zip" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="email_input">Email</label>
+										<input type="text" class="form-control" id="email_input" placeholder="Email" v-model="ui.place.email" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="phone_input">Phone</label>
+										<input type="text" class="form-control" id="phone_input" placeholder="Phone" v-model="ui.place.phone" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="notes_input">Notes</label>
+										<textarea class="form-control" rows="3" id="notes_input" placeholder="Notes" v-model="ui.place.notes" autocomplete="off"></textarea>
+									</div>
+								</div>
 							</div>
 						</div>
 						<div class="modal-footer">
@@ -297,37 +307,47 @@
 								<label for="name_input">Name*</label>
 								<input type="text" class="form-control" id="name_input" placeholder="Name" required v-model="ui.place.name" autocomplete="off">
 							</div>
-							<div class="form-group">
-								<label for="address_line_1_input">Address Line 1</label>
-								<input type="text" class="form-control" id="address_line_1_input" placeholder="Address Line 1" v-model="ui.place.address_line_1" autocomplete="off">
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" data-toggle="collapse" data-target="#view_additional_options" aria-expanded="false" aria-controls="view_additional_options" v-model="ui.place.additional_options">
+									Additional Options
+								</label>
 							</div>
-							<div class="form-group">
-								<label for="address_line_2_input">Address Line 2</label>
-								<input type="text" class="form-control" id="address_line_2_input" placeholder="Address Line 2" v-model="ui.place.address_line_2" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="address_city_input">Address City</label>
-								<input type="text" class="form-control" id="address_city_input" placeholder="Address City" v-model="ui.place.address_city" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="address_state_input">Address State</label>
-								<input type="text" class="form-control" id="address_state_input" placeholder="Address State" v-model="ui.place.address_state" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="address_zip_input">Address Zip</label>
-								<input type="text" class="form-control" id="address_zip_input" placeholder="Address Zip" v-model="ui.place.address_zip" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="email_input">Email</label>
-								<input type="text" class="form-control" id="email_input" placeholder="Email" v-model="ui.place.email" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="phone_input">Phone</label>
-								<input type="text" class="form-control" id="phone_input" placeholder="Phone" v-model="ui.place.phone" autocomplete="off">
-							</div>
-							<div class="form-group">
-								<label for="notes_input">Notes</label>
-								<textarea class="form-control" rows="3" id="notes_input" placeholder="Notes" v-model="ui.place.notes" autocomplete="off"></textarea>
+							<div class="collapse" id="view_additional_options">
+								<div class="well">
+									<div class="form-group">
+										<label for="address_line_1_input">Address Line 1</label>
+										<input type="text" class="form-control" id="address_line_1_input" placeholder="Address Line 1" v-model="ui.place.address_line_1" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_line_2_input">Address Line 2</label>
+										<input type="text" class="form-control" id="address_line_2_input" placeholder="Address Line 2" v-model="ui.place.address_line_2" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_city_input">Address City</label>
+										<input type="text" class="form-control" id="address_city_input" placeholder="Address City" v-model="ui.place.address_city" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_state_input">Address State</label>
+										<input type="text" class="form-control" id="address_state_input" placeholder="Address State" v-model="ui.place.address_state" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="address_zip_input">Address Zip</label>
+										<input type="text" class="form-control" id="address_zip_input" placeholder="Address Zip" v-model="ui.place.address_zip" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="email_input">Email</label>
+										<input type="text" class="form-control" id="email_input" placeholder="Email" v-model="ui.place.email" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="phone_input">Phone</label>
+										<input type="text" class="form-control" id="phone_input" placeholder="Phone" v-model="ui.place.phone" autocomplete="off">
+									</div>
+									<div class="form-group">
+										<label for="notes_input">Notes</label>
+										<textarea class="form-control" rows="3" id="notes_input" placeholder="Notes" v-model="ui.place.notes" autocomplete="off"></textarea>
+									</div>
+								</div>
 							</div>
 							<button class="btn btn-danger btn-block" type="button" data-toggle="collapse" data-target="#delete_place_confirm" aria-expanded="false" aria-controls="delete_place_confirm">Delete</button>
 							<div class="collapse" id="delete_place_confirm">
@@ -352,11 +372,13 @@
 
 	<template id="move_things_to_place_template">
 		<div class="modal fade" id="move_things_to_place_modal" tabindex="-1" role="dialog" aria-labelledby="move_things_to_place_modal_label">
+			<div class="focus_barrier"></div>
 			<div class="modal-dialog" role="document">
 				<div class="modal-content">
 					<form @submit.prevent="move_things_to_place">
 						<div class="modal-header">
-							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"
+								v-on:keydown.down.prevent="focus_next(['input'])">
 								<span aria-hidden="true">&times;</span>
 							</button>
 							<h4 class="modal-title" id="move_things_to_place_modal_label"><i class="fa fa-briefcase" aria-hidden="true"></i> Add Things to {{ui.place.name}}</h4>
@@ -367,11 +389,18 @@
 								<li class="list-group-item">
 									<div class="input-group">
 										<div class="input-group-addon"><i class="fa fa-filter" aria-hidden="true"></i></div>
-										<input type="search" class="form-control" placeholder="Search" v-model="ui.add_to_moving_things_filter" v-on:keydown.enter.prevent="attempt_to_add_to_moving_things">
+										<input type="search" class="form-control" autofocus placeholder="Search"
+											id="add_to_moving_things_list_search"
+											v-model="ui.add_to_moving_things_filter"
+											v-on:keydown.up.prevent="focus_prev(['button'])"
+											v-on:keydown.down.prevent="focus_next(['a', 'button'])"
+											v-on:keydown.enter.prevent="attempt_to_add_to_moving_things">
 									</div>
 								</li>
 								<a v-for="thing in add_list_things | orderBy 'brand' | limitBy ui.moving_things_view_length"
-									class="list-group-item add_to_moving_things_item"
+									v-on:keydown.up.prevent="focus_prev(['a', 'input'])"
+									v-on:keydown.down.prevent="focus_next(['a', 'button'])"
+									v-bind:class="['list-group-item', 'add_to_moving_things_item', {'focused': (add_list_things.length === 1)}]"
 									@click.prevent="add_to_moving_things(thing)"
 									href="#">
 									<i class="fa fa-plus" aria-hidden="true"></i> &nbsp; {{thing.brand}} {{thing.type}}
@@ -379,6 +408,8 @@
 									<span class="badge">{{thing.tracking}}</span>
 								</a>
 								<a v-if="add_list_things.length > ui.moving_things_view_length"
+									v-on:keydown.up.prevent="focus_prev(['a', 'input'])"
+									v-on:keydown.down.prevent="focus_next(['a', 'button'])"
 									class="list-group-item text-center"
 									href="" @click.prevent="ui.moving_things_view_length *= 2">
 									<i class="fa fa-chevron-circle-down" aria-hidden="true" aria-label="View More"></i>
@@ -388,6 +419,8 @@
 							<label>Moving {{ui.moving_things.length}} to {{ui.place.name}}</label>
 							<div class="list-group">
 								<a v-for="thing in remove_list_things | orderBy 'brand'"
+									v-on:keydown.up.prevent="focus_prev(['a', 'input'])"
+									v-on:keydown.down.prevent="focus_next(['a', 'button'])"
 									class="list-group-item"
 									@click.prevent="remove_from_moving_things(thing)"
 									href="#">
@@ -398,12 +431,17 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close">Cancel</button>
-							<button type="submit" class="btn btn-success">Add</button>
+							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close"
+								v-on:keydown.right.prevent="focus_next(['button'])"
+								v-on:keydown.up.prevent="focus_prev(['a', 'input'])">Cancel</button>
+							<button type="submit" class="btn btn-success"
+								v-on:keydown.left.prevent="focus_prev(['button'])"
+								v-on:keydown.up.prevent="focus_prev(['a', 'input'])">Add</button>
 						</div>
 					</form>
 				</div>
 			</div>
+			<div class="focus_barrier"></div>
 		</div>
 	</template>
 
@@ -658,6 +696,256 @@
 	</template>
 
 
+	<!-- profile -->
+
+	<template id="profile_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<ol class="breadcrumb">
+				<li class="active">My Profile</li>
+			</ol>
+			<div class="section">
+				<h2>
+					<i class="fa fa-user" aria-hidden="true"></i> My Profile &nbsp;
+					<button type="button" class="btn btn-default btn-xs" @click.prevent="open_edit_profile">
+						<i class="fa fa-pencil" aria-hidden="true"></i>
+						Edit
+					</button>
+				</h2>
+
+				<div class="details">
+					<div v-if="user.first_name && user.last_name">
+						<h3><i class="fa fa-smile-o" aria-hidden="true"></i> Name</h3>
+						<p>{{user.first_name}} {{user.last_name}}</p>
+					</div>
+
+					<div v-if="user.email">
+						<h3><i class="fa fa-envelope" aria-hidden="true"></i> Email</h3>
+						<p><a href="mailto:{{user.email}}">{{user.email}}</a></p>
+					</div>
+
+					<div v-if="user.mobile">
+						<h3><i class="fa fa-phone" aria-hidden="true"></i> Mobile</h3>
+						<p><a href="sms:+{{user.phone}}">{{user.mobile | phone}}</a></p>
+					</div>
+
+					<div v-if="user.username">
+						<h3><i class="fa fa-hand-peace-o" aria-hidden="true"></i> Username</h3>
+						<p>{{user.username}}</p>
+					</div>
+
+					<div v-if="user.password">
+						<h3><i class="fa fa-key" aria-hidden="true"></i> Password</h3>
+						<p>********</p>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<app-edit-profile></app-edit-profile>
+	</template>
+
+	<template id="edit_profile_template">
+		<div class="modal fade" id="edit_profile_modal" tabindex="-1" role="dialog" aria-labelledby="edit_profile_modal_label">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<form @submit.prevent="edit_profile">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+								<span aria-hidden="true">&times;</span>
+							</button>
+							<h4 class="modal-title" id="edit_thing_modal_label"><i class="fa fa-user" aria-hidden="true"></i> Edit Profile</h4>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<label for="first_name_input">First Name*</label>
+								<input type="text" class="form-control" id="first_name_input" placeholder="First Name" required v-model="ui.user.first_name" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="last_name_input">Last Name*</label>
+								<input type="text" class="form-control" id="last_name_input" placeholder="Last Name" required v-model="ui.user.last_name" autocomplete="off">
+							</div>
+							<div class="form-group">
+								<label for="username_input">Username* <span class="field-fine-print">{{ui.username_guidelines}}</span></label>
+								<input type="text" class="form-control" id="username_input" placeholder="Username" required v-model="ui.user.username" autocomplete="off">
+							</div>
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" data-toggle="collapse" data-target="#change_user_email" aria-expanded="false" aria-controls="change_user_email" v-model="ui.user.change_email">
+									Change Email
+								</label>
+							</div>
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" data-toggle="collapse" data-target="#change_user_password" aria-expanded="false" aria-controls="change_user_password" v-model="ui.user.change_password">
+									Change Password
+								</label>
+							</div>
+							<div>
+								<div class="collapse" id="change_user_email">
+									<div class="well">
+										<div class="form-group">
+											<label for="email_input">Email*</label>
+											<input type="text" class="form-control" id="email_input" placeholder="Email" required="{{ui.user.change_email}}" v-model="ui.user.email" autocomplete="off">
+										</div>
+										<div class="form-group">
+											<label for="confirm_email_input">Confirm Email*</label>
+											<input type="text" class="form-control" id="confirm_email_input" placeholder="Confirm Email" required="{{ui.user.change_email}}" v-model="ui.user.confirm_email" autocomplete="off">
+										</div>
+									</div>
+								</div>
+								<div class="collapse" id="change_user_password">
+									<div class="well">
+										<div class="form-group">
+											<label for="old_password_input">Current Password*</label>
+											<input type="text" class="form-control" id="old_password_input" placeholder="Current Password" required="{{ui.user.change_password}}" v-model="ui.user.old_password" autocomplete="off">
+										</div>
+										<div class="form-group">
+											<label for="new_password_input">New Password* <span class="field-fine-print">{{ui.password_guidelines}}</span></label>
+											<input type="text" class="form-control" id="new_password_input" placeholder="New Password" required="{{ui.user.change_password}}" v-model="ui.user.new_password" autocomplete="off">
+										</div>
+										<div class="form-group">
+											<label for="new_confirm_password_input">New Password Confirm*</label>
+											<input type="text" class="form-control" id="new_confirm_password_input" placeholder="New Password Confirm" required="{{ui.user.change_password}}" v-model="ui.user.new_confirm_password" autocomplete="off">
+										</div>
+									</div>
+								</div>
+							</div>
+							<div>
+								<button class="btn btn-danger btn-block" type="button" data-toggle="collapse" data-target="#delete_user_confirm" aria-expanded="false" aria-controls="delete_user_confirm">Delete</button>
+								<div class="collapse" id="delete_user_confirm">
+									<div class="well text-center">
+										<p><strong>Are you sure you want to delete {{ui.user.username}}?</strong></p>
+										<p>
+											<button type="button" class="btn btn-success" data-toggle="collapse" data-target="#delete_user_confirm" aria-expanded="true" aria-controls="delete_user_confirm">No</button>
+											<button type="button" class="btn btn-danger" @click="delete_user">Yes, I'm sure</button>
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-warning" data-dismiss="modal" aria-label="Close">Cancel</button>
+							<button type="submit" class="btn btn-success">Update</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</template>
+
+
+	<!-- preferences -->
+
+	<template id="preferences_template">
+		<app-header></app-header>
+
+		<div class="container">
+			<ol class="breadcrumb">
+				<li class="active">My Preferences</li>
+			</ol>
+			<div class="section">
+				<h2>
+					<i class="fa fa-sliders" aria-hidden="true"></i> My Preferences
+				</h2>
+
+				<form>
+					<div class="panel panel-default subsection">
+						<div class="panel-heading">
+							<h3 class="panel-title"><i class="fa fa-list" aria-hidden="true"></i>
+								Layout
+								<button type="button" class="btn btn-default btn-xs pull-right" @click.prevent="restore_defaults('layout');">
+									<i class="fa fa-undo" aria-hidden="true"></i>
+									Defaults
+								</button>
+							</h3>
+						</div>
+						<div class="panel-body">
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" v-model="ui.user.preferences.always_show_history"> Always show history
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="panel panel-default section">
+						<div class="panel-heading">
+							<h3 class="panel-title"><i class="fa fa-flag" aria-hidden="true"></i>
+								Notifications
+								<button type="button" class="btn btn-default btn-xs pull-right" @click.prevent="restore_defaults('notifications');">
+									<i class="fa fa-undo" aria-hidden="true"></i>
+									Defaults
+								</button>
+							</h3>
+
+						</div>
+						<div class="panel-body">
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" v-model="ui.user.preferences.receive_email_notifications"> Receive email notifications
+								</label>
+							</div>
+							<div class="col-lg-offset-2 col-lg-10">
+								<div class="checkbox {{user.preferences.receive_email_notifications ? '' : 'disabled'}}">
+									<label>
+										<input type="checkbox" v-model="ui.user.preferences.notify_when_place_updated"
+										{{user.preferences.receive_email_notifications ? "" : "disabled"}}>
+										Notify me when a place is updated
+									</label>
+								</div>
+								<div class="checkbox {{user.preferences.receive_email_notifications ? '' : 'disabled'}}">
+									<label>
+										<input type="checkbox" v-model="ui.user.preferences.notify_when_place_added_or_removed"
+										{{user.preferences.receive_email_notifications ? "" : "disabled"}}> 
+										Notify me when a place is added or removed
+									</label>
+								</div>
+								<div class="checkbox {{user.preferences.receive_email_notifications ? '' : 'disabled'}}">
+									<label>
+										<input type="checkbox" v-model="ui.user.preferences.notify_when_thing_updated"
+										{{user.preferences.receive_email_notifications ? "" : "disabled"}}> 
+										Notify me when a thing is updated
+									</label>
+								</div>
+								<div class="checkbox {{user.preferences.receive_email_notifications ? '' : 'disabled'}}">
+									<label>
+										<input type="checkbox" v-model="ui.user.preferences.notify_when_thing_added_or_removed"
+										{{user.preferences.receive_email_notifications ? "" : "disabled"}}> 
+										Notify me when a thing is added or removed
+									</label>
+								</div>
+								<div class="checkbox {{user.preferences.receive_email_notifications ? '' : 'disabled'}}">
+									<label>
+										<input type="checkbox" v-model="ui.user.preferences.notify_when_thing_moved"
+										{{user.preferences.receive_email_notifications ? "" : "disabled"}}> 
+										Notify me when a thing is moved
+									</label>
+								</div>
+								<div class="checkbox {{user.preferences.receive_email_notifications ? '' : 'disabled'}}">
+									<label>
+										<input type="checkbox" v-model="ui.user.preferences.notify_when_account_updated"
+										{{user.preferences.receive_email_notifications ? "" : "disabled"}}> 
+										Notify me if my account is updated by an admin
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="section">
+							<button type="button" class="btn btn-warning">Cancel</button>
+							<button type="submit" class="btn btn-success">Save</button>
+							&nbsp; <span class="text-success"><i class="fa fa-check" aria-hidden="true"></i> All changes saved</span>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<app-edit-profile></app-edit-profile>
+	</template>
+
+
 	<!-- login -->
 
 	<template id="login_template">
@@ -696,27 +984,27 @@
 
 				<form @submit.prevent="create_user" class="section">
 						<div class="form-group">
-							<label for="first_name_input">First Name</label>
+							<label for="first_name_input">First Name*</label>
 							<input type="text" class="form-control" id="first_name_input" placeholder="First Name" required v-model="ui.user.first_name" autocomplete="off" maxlength="50">
 						</div>
 						<div class="form-group">
-							<label for="last_name_input">Last Name</label>
+							<label for="last_name_input">Last Name*</label>
 							<input type="text" class="form-control" id="last_name_input" placeholder="Last Name" required v-model="ui.user.last_name" autocomplete="off" maxlength="50">
 						</div>
 						<div class="form-group">
-							<label for="email_input">Email</label>
+							<label for="email_input">Email*</label>
 							<input type="email" class="form-control" id="email_input" placeholder="Email" required v-model="ui.user.email" autocomplete="off" maxlength="50">
 						</div>
 						<div class="form-group">
-							<label for="confirm_email_input">Confirm Email</label>
+							<label for="confirm_email_input">Confirm Email*</label>
 							<input type="email" class="form-control" id="confirm_email_input" placeholder="Confirm Email" required v-model="ui.user.confirm_email" autocomplete="off" maxlength="50">
 						</div>
 						<div class="form-group">
-							<label for="username_input">Username <span class="field-fine-print">Only letters and numbers. 16 characters or less.</span></label>
+							<label for="username_input">Username* <span class="field-fine-print">{{ui.username_guidelines}}</span></label>
 							<input type="text" class="form-control" id="username_input" placeholder="Username" required v-model="ui.user.username" autocomplete="off" maxlength="16">
 						</div>
 						<div class="form-group">
-							<label for="username_input">Password <span class="field-fine-print">Must include lowercase, uppercase, and number</span></label>
+							<label for="username_input">Password* <span class="field-fine-print">{{ui.password_guidelines}}</span></label>
 							<input type="password" class="form-control" id="password_input" placeholder="Password" required v-model="ui.user.password" autocomplete="off" maxlength="50">
 						</div>
 						<button type="submit" class="btn btn-success">Create Master Account</button>
@@ -730,12 +1018,12 @@
 
 	<template id="alerts_template">
 		<div class="alerts">
-			<app-alert v-for="alert in ui.alerts" :alert="alert"></app-alert>
+			<app-alert v-for="alert in ui.alerts" v-bind:alert="alert"></app-alert>
 		</div>
 	</template>
 
 	<template id="alert_template">
-		<div class="alert alert-{{alert.type}}" role="alert"><strong>{{{alert.title}}}:</strong> {{{alert.message}}}</div>
+		<div class="alert alert-{{alert.type}}" role="alert"><strong>{{alert.title}}:</strong> {{alert.message}}</div>
 	</template>
 
 
